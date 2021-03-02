@@ -1,49 +1,85 @@
 const reqs = require('../../required_modules')
 
 Movie = reqs.mongoose.model("Movies")
-var movieNo, seriesNo, totalNo, disGeneres, disSeries, disStudios
+
 
 module.exports = (req, res) => {
 
+  let statData = new Map()
+
   //Ilość filmów:
-  Movie.countDocuments({
-    "isSeries": 0
-  }, (err, count) => {
-    movieNo = count
-  })
+  function movieNo() {
+    return new Promise((resolve, reject) => {
+      Movie.countDocuments({
+        "isSeries": 0
+      }, (err, count) => {
+        resolve(count)
+      })
+    })
+  }
+
 
   //Całkowita ilość przesłanych plików
-  Movie.countDocuments({}, (err, count) => {
-    totalNo = count
-  })
-
-  seriesNo = totalNo - movieNo
-
-  Movie.find().distinct(
-    'series_id', (err, results) => {
-      if (results)
-        disSeries = results.length
+  function totalNo() {
+    return new Promise((resolve, reject) => {
+      Movie.countDocuments({}, (err, count) => {
+        resolve(count)
+      })
     })
+  }
 
-  Movie.find().distinct(
-    'genere', (err, results) => {
-      if (results)
-        disGeneres = results.length
+  //ilość seriali
+  function disSeries() {
+    return new Promise((resolve, reject) => {
+      Movie.find().distinct(
+        'series_id', (err, results) => {
+          if (results)
+            resolve(results.length)
+        })
     })
+  }
 
-  Movie.find().distinct(
-    'studio', (err, results) => {
-      if (results)
-        disStudios = results.length
+  //Ilość gatunków
+  function disGeneres() {
+    return new Promise((resolve, reject) => {
+      Movie.find().distinct(
+        'genere', (err, results) => {
+          if (results)
+            resolve(results.length)
+        })
     })
+  }
 
-    console.log(totalNo)
-  res.json({
-    "Total Number of Movies": totalNo,
-    "Number of standalone movies": movieNo,
-    "Number of series and episodes": seriesNo,
-    "No of distinct Series": disSeries,
-    "No of distinct studios": disStudios,
-    "No of distinct generes": disGeneres
-  })
+
+  //Ilość wytwórni
+  function disStudios() {
+    return new Promise((resolve, reject) => {
+      Movie.find().distinct(
+        'studio', (err, results) => {
+          if (results)
+            resolve(results.length)
+        })
+    })
+  }
+
+
+  async function sendStats() {
+    let total_no = await totalNo()
+    let dis_series = await disSeries()
+    let movie_no = await movieNo()
+    let series_no = total_no - movie_no
+    let disStudios_no = await disStudios()
+    let disGeneres_no = await disGeneres()
+
+    res.json({
+      "Total Number of Movies": total_no,
+      "Number of standalone movies": movie_no,
+      "Number of series and episodes": series_no,
+      "No of distinct Series": dis_series,
+      "No of distinct studios": disStudios_no,
+      "No of distinct generes": disGeneres_no
+    })
+  }
+
+  sendStats()
 }

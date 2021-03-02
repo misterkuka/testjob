@@ -1,3 +1,6 @@
+const cors = require('cors')
+const corsOptions = require('../../cors_whitelist')
+
 module.exports = function(app) {
 
   var ctrl = require('./ctr_list');
@@ -16,7 +19,7 @@ module.exports = function(app) {
 
   app.route('/logout').post(ctrl.logout)
 
-  app.route('/movies')
+  app.route('/movies', cors(corsOptions.corsOptions))
     .get(ctrl.listMovies)
     .post(ctrl.upload)
 
